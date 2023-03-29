@@ -67,7 +67,7 @@ create_timecard_table.write_to_table(timecard_table)
 create_apt_table.write_to_table(apt_table)
 create_atn_points_table.write_to_table(points_table)
 create_pdf_table.write_to_table(pdf_table)
-create_ee_table.write_to_table(ee_table)
+create_ee_table.write_to_table(ee_table, save_path)
 
 cnxn_url = URL.create("mssql+pyodbc", query={"odbc_connect": az.cnxn_string})
 engine = sql.create_engine(cnxn_url)
@@ -78,6 +78,7 @@ from openpyxl.utils import get_column_letter
 
 # Missing Data Query
 mdq = """
+
 --DEVEN HEADEN --
 (Select 
     atn.individual as 'Name',
@@ -101,6 +102,7 @@ From
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='13B Castlebrook'
 
     WHERE 
@@ -147,7 +149,7 @@ FROM
             ON (atn.date=isp.date)
             AND (isp.Individual=atn.individual)
             AND ((cast(isp.begin_time as time)>='6pm' AND isp.[duration]>=30)
-                AND (cast(isp.begin_time as time)<='11pm' AND isp.[duration]>=30))
+                AND (cast(isp.begin_time as time)<='11:59pm' AND isp.[duration]>=30))
         
         Left Join   TimeCards2022 tc
             ON (atn.date=tc.InPunchDay)
@@ -244,6 +246,7 @@ From
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='13B Castlebrook'
 
     WHERE 
@@ -290,7 +293,7 @@ FROM
             ON (atn.date=isp.date)
             AND (isp.Individual=atn.individual)
             AND ((cast(isp.begin_time as time)>='6pm' AND isp.[duration]>=30)
-                AND (cast(isp.begin_time as time)<='11pm' AND isp.[duration]>=30))
+                AND (cast(isp.begin_time as time)<='11:59pm' AND isp.[duration]>=30))
         
         Left Join   TimeCards2022 tc
             ON (atn.date=tc.InPunchDay)
@@ -389,6 +392,7 @@ FROM
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='SA3'
 
 WHERE 
@@ -444,6 +448,7 @@ FROM [attendance2022] atn
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='SA3'
 
 WHERE 
@@ -493,7 +498,7 @@ FROM [attendance2022] atn
         ON (atn.date=isp.date)
         AND (isp.Individual=atn.individual)
         AND ((cast(isp.begin_time as time)>='6pm' AND isp.[duration]>=30)
-        AND (cast(isp.begin_time as time)<='11pm' AND isp.[duration]>=30))
+        AND (cast(isp.begin_time as time)<='11:59pm' AND isp.[duration]>=30))
 
     Left Join TimeCards2022 tc
         ON (atn.date=tc.InPunchDay)
@@ -600,6 +605,7 @@ FROM
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='SA3'
 
 WHERE 
@@ -654,6 +660,7 @@ FROM [attendance2022] atn
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='SA3'
 
 WHERE 
@@ -702,7 +709,7 @@ FROM [attendance2022] atn
         ON (atn.date=isp.date)
         AND (isp.Individual=atn.individual)
         AND ((cast(isp.begin_time as time)>='6pm' AND isp.[duration]>=30)
-        AND (cast(isp.begin_time as time)<='11pm' AND isp.[duration]>=30))
+        AND (cast(isp.begin_time as time)<='11:59pm' AND isp.[duration]>=30))
 
     Left Join TimeCards2022 tc
         ON (atn.date=tc.InPunchDay)
@@ -809,6 +816,7 @@ FROM
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='SA3'
 
 WHERE 
@@ -863,6 +871,7 @@ FROM [attendance2022] atn
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='SA3'
 
 WHERE 
@@ -911,7 +920,7 @@ FROM [attendance2022] atn
         ON (atn.date=isp.date)
         AND (isp.Individual=atn.individual)
         AND ((cast(isp.begin_time as time)>='6pm' AND isp.[duration]>=30)
-        AND (cast(isp.begin_time as time)<='11pm' AND isp.[duration]>=30))
+        AND (cast(isp.begin_time as time)<='11:59pm' AND isp.[duration]>=30))
 
     Left Join TimeCards2022 tc
         ON (atn.date=tc.InPunchDay)
@@ -1016,6 +1025,7 @@ FROM
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='SA8'
 
 WHERE 
@@ -1070,6 +1080,7 @@ FROM [attendance2022] atn
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='SA8'
 
 WHERE 
@@ -1118,7 +1129,7 @@ FROM [attendance2022] atn
         ON (atn.date=isp.date)
         AND (isp.Individual=atn.individual)
         AND ((cast(isp.begin_time as time)>='6pm' AND isp.[duration]>=30)
-        AND (cast(isp.begin_time as time)<='11pm' AND isp.[duration]>=30))
+        AND (cast(isp.begin_time as time)<='11:59pm' AND isp.[duration]>=30))
 
     Left Join TimeCards2022 tc
         ON (atn.date=tc.InPunchDay)
@@ -1225,6 +1236,7 @@ UNION
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
             AND tc.Department='W104'
 
     WHERE atn.individual like 'SEWARD%'
@@ -1277,6 +1289,7 @@ UNION
 
     Left Join TimeCards2022 tc 
     ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
             AND tc.Department='W104'
 
     WHERE atn.individual like 'SEWARD%'
@@ -1323,7 +1336,7 @@ UNION
             ON (atn.date=isp.date)
             AND (isp.Individual=atn.individual)
             AND ((cast(isp.begin_time as time)>='6pm' AND isp.[duration]>=30)
-                AND (cast(isp.begin_time as time)<='11pm' AND isp.[duration]>=30))
+                AND (cast(isp.begin_time as time)<='11:59pm' AND isp.[duration]>=30))
         
     Left Join TimeCards2022 tc
         ON (atn.date=tc.InPunchDay)
@@ -1471,6 +1484,7 @@ FROM [Attendance2022] atn
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='k110'
 
 WHERE 
@@ -1524,6 +1538,7 @@ FROM [Attendance2022] atn
 
     Left Join TimeCards2022 tc 
     ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
     AND tc.Department='k110'
 
 WHERE 
@@ -1569,7 +1584,7 @@ FROM [Attendance2022] atn
     ON (atn.date=isp.date)
     AND (isp.Individual=atn.individual)
     AND ((cast(isp.begin_time as time)>='6pm' AND isp.[duration]>=30)
-    AND (cast(isp.begin_time as time)<='11pm' AND isp.[duration]>=30))
+    AND (cast(isp.begin_time as time)<='11:59pm' AND isp.[duration]>=30))
 
     Left Join TimeCards2022 tc
     ON (atn.date=tc.InPunchDay)
@@ -1671,6 +1686,7 @@ UNION
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
             AND tc.Department='W103'
 
     WHERE atn.individual like 'JAMES%'
@@ -1724,6 +1740,7 @@ UNION
 
     Left Join TimeCards2022 tc 
     ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
             AND tc.Department='W103'
 
     WHERE atn.individual like 'JAMES%'
@@ -1770,7 +1787,7 @@ UNION
             ON (atn.date=isp.date)
             AND (isp.Individual=atn.individual)
             AND ((cast(isp.begin_time as time)>='6pm' AND isp.[duration]>=30)
-                AND (cast(isp.begin_time as time)<='11pm' AND isp.[duration]>=30))
+                AND (cast(isp.begin_time as time)<='11:59pm' AND isp.[duration]>=30))
         
     Left Join TimeCards2022 tc
         ON (atn.date=tc.InPunchDay)
@@ -1876,6 +1893,7 @@ UNION
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
             AND tc.Department='W103'
 
     WHERE atn.individual like 'CHIT%'
@@ -1929,6 +1947,7 @@ UNION
 
     Left Join TimeCards2022 tc 
     ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
             AND tc.Department='W103'
 
     WHERE atn.individual like 'CHIT%'
@@ -1975,7 +1994,7 @@ UNION
             ON (atn.date=isp.date)
             AND (isp.Individual=atn.individual)
             AND ((cast(isp.begin_time as time)>='6pm' AND isp.[duration]>=30)
-                AND (cast(isp.begin_time as time)<='11pm' AND isp.[duration]>=30))
+                AND (cast(isp.begin_time as time)<='11:59pm' AND isp.[duration]>=30))
         
     Left Join TimeCards2022 tc
         ON (atn.date=tc.InPunchDay)
@@ -2081,6 +2100,7 @@ FROM [attendance2022] atn
 
     Left Join TimeCards2022 tc 
     ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
     AND tc.Department='W103'
 
 WHERE 
@@ -2138,6 +2158,7 @@ UNION
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
             AND tc.Department='W104'
 
     WHERE atn.individual like 'WRIGHT%'
@@ -2190,6 +2211,7 @@ UNION
 
     Left Join TimeCards2022 tc 
     ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
             AND tc.Department='W104'
 
     WHERE atn.individual like 'WRIGHT%'
@@ -2236,7 +2258,7 @@ UNION
             ON (atn.date=isp.date)
             AND (isp.Individual=atn.individual)
             AND ((cast(isp.begin_time as time)>='6pm' AND isp.[duration]>=30)
-                AND (cast(isp.begin_time as time)<='11pm' AND isp.[duration]>=30))
+                AND (cast(isp.begin_time as time)<='11:59pm' AND isp.[duration]>=30))
         
     Left Join TimeCards2022 tc
         ON (atn.date=tc.InPunchDay)
@@ -2341,6 +2363,7 @@ FROM
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='SA8'
         
 
@@ -2348,7 +2371,8 @@ WHERE
     atn.individual like 'GOLDS%'
     AND isp.isp_program is NULL
     -- IF THE INDIVIDUAL GOES TO DAY PROGRAM --
-    --AND (datepart(weekday,atn.date)<2 OR datepart(weekday,atn.date)>6) 
+    AND (datepart(weekday,atn.date)<2 OR datepart(weekday,atn.date)>6 
+            AND atn.Date > '02/28/2023') 
 
 Group By atn.date, tc.EarnHours,
  
@@ -2396,6 +2420,7 @@ FROM [attendance2022] atn
 
     Left Join TimeCards2022 tc 
         ON atn.date=tc.InPunchDay
+        AND (tc.EarnCode = 'R' OR tc.EarnCode is null)
         AND tc.Department='SA8'
 
 WHERE 
@@ -2583,11 +2608,9 @@ SELECT
     
 FROM
     atnPoints pt
-    Join CurrentDSP dsp 
-    ON pt.EE_Code=dsp.Employee_Code
+    Join NEW n 
+    ON pt.EE_Code=n.Employee_Code
 
-Where 
-    ScheduledDate > '04/17/2022'
 GROUP BY 
     EE_Code, 
     pt.FirstName,

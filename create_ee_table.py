@@ -7,9 +7,7 @@ notion_token = "secret_omL8nzIdOZySUeAtSOCHm0bUNh2ydXdohuePKPBXkxm"
 ee_db_id = "03764697bdf74f2b938313815cf62069"
 id_url = "https://www.notion.so/03764697bdf74f2b938313815cf62069?v=e856d446c1a44cfcb8857b014f591284"
 
-ee_df = pd.DataFrame(nd.download(ee_db_id, api_key=notion_token, resolve_relation_values=True))
-
-updated = pd.read_csv(fr"C:\Users\olato\OneDrive\Desktop\TOBOLA QA REVIEW\Data_Pulls\2023\2_February\20230207131024_Current Employee Notion_67f1afd5.csv")
+ee_df = pd.DataFrame(nd.download(ee_db_id, api_key=notion_token))
 
 ee_df = ee_df[["EE Code",
                'First Name',
@@ -23,25 +21,6 @@ ee_df = ee_df[["EE Code",
                'DL Expiration Date',
                'Termination Date']]
 
-updated = updated[['Employee_Code',
-                  'Legal_Firstname',
-                   'Legal_Lastname',
-                   'Hire_Date',
-                   'Position_Seat_Number',
-                   'Primary_Supervisor',
-                   'Department',
-                   'Termination_Date']]
-
-updated.columns = ['EE Code',
-                   'First Name',
-                   'Last Name',
-                   'Hire Date',
-                   'Position Seat',
-                   'Supervisor',
-                   'Department',
-                   'Termination_Date']
-
-
 def start(ee_path, save_path, savedate):
 
     # Create a dataframe from the excel file
@@ -49,14 +28,22 @@ def start(ee_path, save_path, savedate):
 
     ee.to_csv(fr"{save_path}\EE({savedate}).csv")
 
+    ee['EE Code'] = ee['Employee_Code']
+    ee['First Name'] = ee['Legal_Firstname']
+    ee['Last Name'] = ee['Legal_Lastname']
+    ee['Hire Date'] = ee['Hire_Date']
+    ee['Position Seat'] = ee['Position_Seat_Number']
+    ee['Termination Date'] = ee['Termination_Date']
+
+
     return(ee)
 
 
-def write_to_table(DataFrame):
+def write_to_table(DataFrame, savepath):
     import azure_cnxn as az
     from sqlalchemy import create_engine
     # The next steps are used to drop the previous tables from the TOBOLA server
-    #   and then create a replatement from the new data pull
+    #   and then create a replacement from the new data pull
 
     old = ee_df
     new = DataFrame
@@ -78,29 +65,29 @@ def write_to_table(DataFrame):
     engine = sql.create_engine(cnxn_url)
 
     ee_update_query = """Select
-    c.Employee_Code as 'EE Code',
-    c.Legal_Firstname as 'First Name',
-    c.Legal_Lastname as 'Last Name',
-    c.Hire_Date as 'Hire Date',
-     CASE 
+    n.Employee_Code as 'EE Code',
+    n.Legal_Firstname as 'First Name',
+    n.Legal_Lastname as 'Last Name',
+    n.Hire_Date as 'Hire Date',
+    CASE 
         WHEN
-            c.Termination_Date = '00/00/0000'
+            n.Termination_Date = '00/00/0000'
         THEN NULL
-        ELSE c.Termination_Date
+        ELSE n.Termination_Date
     END as 'Termination Date'
 FROM
-    OLD o 
+    NEW n 
 RIGHT JOIN
-    NEW c 
+    OLD o 
     ON
-        o.EE_Code = c.Employee_Code
+        o.[EE Code] = n.Employee_Code
 WHERE
-    o.EE_Code is NULL and c.Legal_Firstname not like 'Test'"""
+    o.[EE Code] is NULL and n.Legal_Firstname not like 'Test'"""
     updates = pd.read_sql_query(ee_update_query, con=engine)
     print("New Employees to NOTION")
     print(updates)
-    updates = updates
 
+    # Add new employees to notion ee database
     updates.to_notion(id_url, title="Tests", api_key=notion_token)
 
     # List any discrepancies between employee information in new vs old
