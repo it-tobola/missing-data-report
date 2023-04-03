@@ -1,6 +1,6 @@
 import pyodbc
 
-server = 'TOBOLA-SGP'
+server = 'localhost'
 database = 'TOBOLA'
 driver = '{ODBC Driver 17 for SQL Server}'
 trusted_connection = 'yes'

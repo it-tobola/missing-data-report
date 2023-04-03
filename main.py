@@ -5,10 +5,7 @@ import create_isp_table
 import create_timecard_table
 import create_atn_points_table
 import create_pdf_table
-import isp_table_clean
 import pandas as pd
-from pandasql import sqldf
-from sklearn import datasets
 from sqlalchemy.engine import URL
 import sqlalchemy as sql
 import azure_cnxn as az
@@ -63,7 +60,8 @@ ee_table = create_ee_table.start(ee_path, save_path, date)
 
 create_isp_table.write_to_table(isp_table)
 create_atn_table.write_to_table(atn_table)
-create_timecard_table.write_to_table(timecard_table)
+tc = create_timecard_table.write_to_table(timecard_table)
+ot = create_timecard_table.staff_ot_report(tc)
 create_apt_table.write_to_table(apt_table)
 create_atn_points_table.write_to_table(points_table)
 create_pdf_table.write_to_table(pdf_table)
@@ -2675,6 +2673,7 @@ ORDER BY
 xlwriter = pd.ExcelWriter(fr"{save_path}\DataReport({date}).xlsx")
 isp_data.to_excel(xlwriter, sheet_name="ISPs", index=False)
 apt_data.to_excel(xlwriter, sheet_name="Apts", index=False)
+ot.to_excel(xlwriter, sheet_name="Staff_OT", index=False)
 ap_data.to_excel(xlwriter, sheet_name="Attendance_Points", index=False)
 #pdf_data.to_excel(xlwriter, sheet_name="Performance_Discussion_Forms", index=False)
 xlwriter.close()

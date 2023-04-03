@@ -1,0 +1,5 @@
+pandas
+notion_df
+openpyxl
+pyodbc
+sqlalchemy

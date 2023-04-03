@@ -3,7 +3,7 @@ import azure_cnxn as az
 from sqlalchemy import create_engine
 
 def start(atn1, atn2, atn3, save_path, date):
-    # enter that paths to the files for each quater of attendance
+    # enter that paths to the files for each quater (3 months) of attendance
     path_list = []
     q1_path = atn1
     q2_path = atn2
@@ -21,9 +21,8 @@ def start(atn1, atn2, atn3, save_path, date):
     frame_list += [q1, q2, q3]
 
     # Create dataframes for the past 6 months
-    h1 = q1.append(q2, ignore_index= True)
-    ytd = h1.append(q3, ignore_index= True)
-    frame_list += [h1, ytd]
+    ytd = pd.concat([q1, q2, q3], ignore_index=True)
+    frame_list += [ytd]
 
     # Update Column Names
     for frame in frame_list:

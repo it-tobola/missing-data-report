@@ -1,4 +1,3 @@
-
 import notion_df as nd
 import pandas as pd
 nd.pandas()
