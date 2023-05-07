@@ -3,7 +3,7 @@ import azure_cnxn as az
 from sqlalchemy import create_engine
 
 def start(atn1, atn2, atn3, save_path, date):
-    # enter that paths to the files for each quater (3 months) of attendance
+    # enter that paths to the files for each quarter (3 months) of attendance
     path_list = []
     q1_path = atn1
     q2_path = atn2
@@ -41,29 +41,38 @@ def start(atn1, atn2, atn3, save_path, date):
         frame['entered_date'] = pd.to_datetime(frame['entered_date'])
 
     # Data Cleaning (Individual Names)
+
+    ## E103
     ytd['individual'] = ytd['individual'].replace(["James, Janet"], 'James, Janet M')
     ytd['individual'] = ytd['individual'].replace(["Chituck, Christina"], 'Chituck, Christina L')
     ytd['individual'] = ytd['individual'].replace(["Wooters, Brianna"], 'Wooters, Brianna E')
+
     ## E104
     ytd['individual'] = ytd['individual'].replace(["Wright, Ralph"], 'Wright, Ralph W')
     ytd['individual'] = ytd['individual'].replace(["Seward, Robert"], 'Seward, Robert')
+
     ## J101
     ytd['individual'] = ytd['individual'].replace(["LeVan, Charles"], 'LeVan, Charles J')
+
     ## K110
     ytd['individual'] = ytd['individual'].replace(["GREEN, JOSEPH E"], 'GREEN, JOSEPH E E')
+
     ## 3NL
     ytd['individual'] = ytd['individual'].replace(["Gallagher, James"], 'Gallagher, James M')
     ytd['individual'] = ytd['individual'].replace(["Garrison, Christian"], 'Garrison, Christian')
     ytd['individual'] = ytd['individual'].replace(["Lanier, Daniel"], 'Lanier, Daniel L')
+
     ## 8NL
     ytd['individual'] = ytd['individual'].replace(["Jardon-Rosales, Dulce"], 'Jardon-Rosales, Dulce Y')
     ytd['individual'] = ytd['individual'].replace(["Goldsberry, Nyea"], 'Goldsberry, Nyea Nicole')
+
     ## Castlebrook
     ytd['individual'] = ytd['individual'].replace(["Faust, Travis"], 'Faust, Travis A')
     ytd['individual'] = ytd['individual'].replace(["Headen, Deven"], 'Headen, Deven T')
 
     #### End
 
+    ytd.drop_duplicates
 
     ytd.to_csv(fr"{save_path}\Attendance({date}).csv")
 
@@ -71,7 +80,7 @@ def start(atn1, atn2, atn3, save_path, date):
 
 def write_to_table(DataFrame):
     # The next steps are used to drop the previous tables from the TOBOLA server
-    #   and then create a replatement from the new data pull
+    #   and then create a replacement from the new data pull
 
     atn = DataFrame
 

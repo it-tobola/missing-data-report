@@ -2,6 +2,7 @@ import create_apt_table
 import create_atn_table
 import create_ee_table
 import create_isp_table
+import create_qa_table
 import create_timecard_table
 import create_atn_points_table
 import create_pdf_table
@@ -16,7 +17,8 @@ cut = slice(2)
 
 year = {
     "22": "2022",
-    "23": "2023"
+    "23": "2023",
+    "24": "2024"
 }
 month = {
     "1.": "1_January",
@@ -46,6 +48,7 @@ apt_path = fr"{save_path}\RAW\apts.xlsx"
 points_path = fr"{save_path}\RAW\atnpoints.csv"
 pdf_path = fr"{save_path}\RAW\pdfs.csv"
 ee_path = fr"{save_path}\RAW\CurrentEmployees.csv"
+auth_path = fr"{save_path}\RAW\authorizations.xlsx"
 
 
 
@@ -55,24 +58,20 @@ timecard_table = create_timecard_table.start(timecard_path, save_path, date)
 apt_table = create_apt_table.start(apt_path, save_path, date)
 points_table = create_atn_points_table.start(points_path, save_path, date)
 pdf_table = create_pdf_table.start(pdf_path, save_path, date)
-ee_table = create_ee_table.start(ee_path, save_path, date)
+ee, notion_ee = create_ee_table.start(ee_path, save_path, date)
 
 
 create_isp_table.write_to_table(isp_table)
 create_atn_table.write_to_table(atn_table)
-tc = create_timecard_table.write_to_table(timecard_table)
-ot = create_timecard_table.staff_ot_report(tc)
 create_apt_table.write_to_table(apt_table)
 create_atn_points_table.write_to_table(points_table)
 create_pdf_table.write_to_table(pdf_table)
-create_ee_table.write_to_table(ee_table, save_path)
+create_ee_table.write_to_table(ee, save_path)
+training = create_ee_table.training_report(date)
 
 cnxn_url = URL.create("mssql+pyodbc", query={"odbc_connect": az.cnxn_string})
 engine = sql.create_engine(cnxn_url)
 
-
-from openpyxl.worksheet.table import Table
-from openpyxl.utils import get_column_letter
 
 # Missing Data Query
 mdq = """
@@ -2669,30 +2668,34 @@ ORDER BY
 #pdf_data = pd.read_sql_query(pdf, con=engine)
 #print(pdf_data)
 
-# MissingData Excel File
+# Overtime Report
+tc = create_timecard_table.write_to_table(timecard_table)
+ot = create_timecard_table.staff_ot_report(tc)
+utz = create_timecard_table.sh_utz(atn_table, timecard_table, save_path, date)
+
+# QA Reports
+qa_df = create_qa_table.qa_df
+
+
+# Data Excel File
 xlwriter = pd.ExcelWriter(fr"{save_path}\DataReport({date}).xlsx")
+wb = xlwriter.book
+
+## ISP DATA
 isp_data.to_excel(xlwriter, sheet_name="ISPs", index=False)
 apt_data.to_excel(xlwriter, sheet_name="Apts", index=False)
 ot.to_excel(xlwriter, sheet_name="Staff_OT", index=False)
 ap_data.to_excel(xlwriter, sheet_name="Attendance_Points", index=False)
+utz.to_excel(xlwriter, sheet_name="Wkly_Site_Utz", index=False)
+training.to_excel(xlwriter, sheet_name="Training_Report", index=False)
+notion_ee.to_excel(xlwriter, sheet_name="Current_EE", index=False)
+qa_df.to_excel(xlwriter, sheet_name="QA Reports", index=False)
 #pdf_data.to_excel(xlwriter, sheet_name="Performance_Discussion_Forms", index=False)
 xlwriter.close()
 
-# The Program takes a break here for you to review the data and clean it before completing the final steps to display,
-# staff who are missing documentation and their counts
-
-print("Take a second to review the documentation, and upload missing data files to Notion.")
-print(" ")
-step = int(input("""Are you ready to move on? 
-    1 for Y, 2 for N.
-    
-    """))
-
 # Display the staff who are currently missing documentation, and how many documentations are they missing
 
-if step == 1:
-    data = pd.read_excel(fr"{save_path}\DataReport({date}).xlsx")
-    counts = data.groupby(data["Staff Name"])
-    print(counts["Staff Name"].count())
-elif step == 2:
-    print("error")
+data = pd.read_excel(fr"{save_path}\DataReport({date}).xlsx")
+counts = data.groupby(data["Staff Name"])
+print(counts["Staff Name"].count())
+

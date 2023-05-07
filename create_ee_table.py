@@ -1,5 +1,6 @@
 import notion_df as nd
 import pandas as pd
+import datetime
 nd.pandas()
 
 notion_token = "secret_omL8nzIdOZySUeAtSOCHm0bUNh2ydXdohuePKPBXkxm"
@@ -8,7 +9,7 @@ id_url = "https://www.notion.so/03764697bdf74f2b938313815cf62069?v=e856d446c1a44
 
 ee_df = pd.DataFrame(nd.download(ee_db_id, api_key=notion_token))
 
-ee_df = ee_df[["EE Code",
+ee_df_trimmed = ee_df[["EE Code",
                'First Name',
                'Last Name',
                'Hire Date',
@@ -17,8 +18,9 @@ ee_df = ee_df[["EE Code",
                'Position Seat',
                'Direct Supervisor',
                'Home Base',
-               'DL Expiration Date',
-               'Termination Date']]
+               'Evaluation Due Date',
+               'Termination Date',
+               'Status']]
 
 def start(ee_path, save_path, savedate):
 
@@ -34,8 +36,10 @@ def start(ee_path, save_path, savedate):
     ee['Position Seat'] = ee['Position_Seat_Number']
     ee['Termination Date'] = ee['Termination_Date']
 
+    notion_ee = ee_df_trimmed
 
-    return(ee)
+
+    return(ee, notion_ee)
 
 
 def write_to_table(DataFrame, savepath):
@@ -44,7 +48,7 @@ def write_to_table(DataFrame, savepath):
     # The next steps are used to drop the previous tables from the TOBOLA server
     #   and then create a replacement from the new data pull
 
-    old = ee_df
+    old = ee_df_trimmed
     new = DataFrame
 
     ##  Create Table
@@ -121,3 +125,34 @@ WHERE
 
     discrepancies.to_excel(fr"{savepath}\HR\ee_discrepancies.xlsx")
 
+def training_report(date):
+    today = datetime.datetime.now().date()
+
+    report = pd.DataFrame()
+    report["EE Code"] = ee_df["EE Code"]
+    report["Name"] = ee_df['First Name'] + " " + ee_df['Last Name']
+    report["LLAM"] = ee_df["LLAM Date"]
+    report["Med Pass Completion"] = ee_df["Med Pass Completion Date"]
+    report["LLAM Due Date"] = ee_df["LLAM Due Date"]
+    report["MANDT"] = ee_df["MANDT Date"]
+    report["MANDT Due Date"] = ee_df["MANDT Due Date"]
+    report["CPR"] = ee_df["CPR Date"]
+    report["CPR Due Date"] = ee_df["CPR Due Date"]
+    report["DL Expiration"] = ee_df["DL Expiration Date"]
+    report["Position"] = ee_df["Position"]
+    report["Department"] = ee_df["Home Base"]
+    report["Status"] = ee_df["Status"]
+    report = pd.DataFrame(report.loc[report['Status'] == "Active"])
+
+    report["Compliance"] = (report["LLAM Due Date"].dt.date <= today) | \
+                           (report["MANDT Due Date"].dt.date <= today) | \
+                           (report["CPR Due Date"].dt.date <= today) | \
+                           (report["DL Expiration"].dt.date <= today)
+
+
+    # Save location for the report
+    save = fr"C:/Users/olato/OneDrive/Desktop/TOBOLA QA REVIEW/REPORTS/training_reports"
+    dsp = pd.DataFrame(report.loc[report['Position'] == "DSP"])
+    dsp.to_excel(fr"{save}/training_report({date}).xlsx")
+
+    return(dsp)
