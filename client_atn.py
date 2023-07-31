@@ -2,12 +2,16 @@ import pandas as pd
 import azure_cnxn as az
 from sqlalchemy import create_engine
 
+
 def start(atn1, atn2, atn3, save_path, date):
     # enter that paths to the files for each quarter (3 months) of attendance
     path_list = []
     q1_path = atn1
     q2_path = atn2
-    q3_path = atn3
+    try:
+        q3_path = atn3
+    except:
+        q3_path = ""
     final_path = save_path
     path_list += [q1_path, q2_path, q3_path, final_path]
 
@@ -15,30 +19,35 @@ def start(atn1, atn2, atn3, save_path, date):
     # Create a frame list
     frame_list = []
 
-    q1 = pd.DataFrame(pd.read_excel(fr"{q1_path}"))
-    q2 = pd.DataFrame(pd.read_excel(fr"{q2_path}"))
-    q3 = pd.DataFrame(pd.read_excel(fr"{q3_path}"))
-    frame_list += [q1, q2, q3]
+    try:
+        q1 = pd.DataFrame(pd.read_excel(fr"{q1_path}"))
+        q2 = pd.DataFrame(pd.read_excel(fr"{q2_path}"))
+        q3 = pd.DataFrame(pd.read_excel(fr"{q3_path}"))
+        frame_list += [q1, q2, q3]
+        ytd = pd.concat([q1, q2, q3], ignore_index=True)
+        frame_list += [ytd]
+    except:
+        q1 = pd.DataFrame(pd.read_excel(fr"{q1_path}"))
+        q2 = pd.DataFrame(pd.read_excel(fr"{q2_path}"))
+        frame_list += [q1, q2]
+        ytd = pd.concat([q1, q2], ignore_index=True)
+        frame_list += [ytd]
 
     # Create dataframes for the past 6 months
-    ytd = pd.concat([q1, q2, q3], ignore_index=True)
-    frame_list += [ytd]
+
 
     # Update Column Names
     for frame in frame_list:
         frame.columns = ['program_site',
                          'individual',
+                         'MCI',
                          'date',
                          'attendance',
-                         'status',
-                         'entered_date',
-                         'entered_by',
                          'time_zone']
 
     # Update necessary column datatypes/values
     for frame in frame_list:
         frame.date = pd.to_datetime(frame.date)
-        frame['entered_date'] = pd.to_datetime(frame['entered_date'])
 
     # Data Cleaning (Individual Names)
 
@@ -46,6 +55,7 @@ def start(atn1, atn2, atn3, save_path, date):
     ytd['individual'] = ytd['individual'].replace(["James, Janet"], 'James, Janet M')
     ytd['individual'] = ytd['individual'].replace(["Chituck, Christina"], 'Chituck, Christina L')
     ytd['individual'] = ytd['individual'].replace(["Wooters, Brianna"], 'Wooters, Brianna E')
+    ytd['individual'] = ytd['individual'].replace(["Isip, Anna"], 'Isip, Anna I')
 
     ## E104
     ytd['individual'] = ytd['individual'].replace(["Wright, Ralph"], 'Wright, Ralph W')
@@ -65,6 +75,7 @@ def start(atn1, atn2, atn3, save_path, date):
     ## 8NL
     ytd['individual'] = ytd['individual'].replace(["Jardon-Rosales, Dulce"], 'Jardon-Rosales, Dulce Y')
     ytd['individual'] = ytd['individual'].replace(["Goldsberry, Nyea"], 'Goldsberry, Nyea Nicole')
+    ytd['individual'] = ytd['individual'].replace(["Weiss, Stephanie"], 'Weiss, Stephanie L')
 
     ## Castlebrook
     ytd['individual'] = ytd['individual'].replace(["Faust, Travis"], 'Faust, Travis A')
@@ -74,9 +85,23 @@ def start(atn1, atn2, atn3, save_path, date):
 
     ytd.drop_duplicates
 
-    ytd.to_csv(fr"{save_path}\Attendance({date}).csv")
+    site_dict = {
+        "13B Dartmouth - Castlebrook (13B Dartmouth - Castlebrook)": "13B Castlebrook",
+        "8 Nairn Ln (8 Nairn Ln)": "SA8",
+        "3 Nairn Ln (3 Nairn Ln)": "SA3",
+        "Katrina 110 (Katrina 110)": "K110",
+        "324 Broadstairs (Broadstairs E103)": "W103",
+        "Westover E104 (Westover-324)": "W104",
+        "Cannon Mills - 101 (Jeffery Pl CLA)": "J101"
+    }
+    for i, row in ytd.iterrows():
+        s1 = row['program_site']
+        ytd['program_site'][ytd['program_site']==s1] = site_dict[s1]
+
+    ytd.to_excel(fr"{save_path}\Attendance({date}).xlsx")
 
     return(ytd)
+
 
 def write_to_table(DataFrame):
     # The next steps are used to drop the previous tables from the TOBOLA server

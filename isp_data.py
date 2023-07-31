@@ -2,12 +2,13 @@ import pandas as pd
 import azure_cnxn as az
 from sqlalchemy import create_engine
 
+
 def start(kc_isp_path, nc_isp_path, save_path, date):
     #Selecting the file paths of the ISP data for each county TOBOLA server & create a data frame
     kc_isp = pd.DataFrame(pd.read_excel(fr"{kc_isp_path}"))
     ncc_isp = pd.DataFrame(pd.read_excel(fr"{nc_isp_path}"))
 
-    all_isp = ncc_isp.append(kc_isp, ignore_index= True)
+    all_isp = ncc_isp.append(kc_isp, ignore_index=True)
 
     ###DATA CLEANING
 
@@ -40,36 +41,54 @@ def start(kc_isp_path, nc_isp_path, save_path, date):
     all_isp['individual'] = all_isp['individual'].replace(["James, Janet"], 'James, Janet M')
     all_isp['individual'] = all_isp['individual'].replace(["Chituck, Christina"], 'Chituck, Christina L')
     all_isp['individual'] = all_isp['individual'].replace(["Wooters, Brianna"], 'Wooters, Brianna E')
+    all_isp['individual'] = all_isp['individual'].replace(["Isip, Anna"], 'Isip, Anna I')
+
     ## E104
     all_isp['individual'] = all_isp['individual'].replace(["Wright, Ralph"], 'Wright, Ralph W')
     all_isp['individual'] = all_isp['individual'].replace(["Seward, Robert"], 'Seward, Robert')
+
     ## J101
     all_isp['individual'] = all_isp['individual'].replace(["LeVan, Charles"], 'LeVan, Charles J')
+
     ## K110
     all_isp['individual'] = all_isp['individual'].replace(["GREEN, JOSEPH E"], 'GREEN, JOSEPH E E')
+
     ## 3NL
     all_isp['individual'] = all_isp['individual'].replace(["Gallagher, James"], 'Gallagher, James M')
     all_isp['individual'] = all_isp['individual'].replace(["Garrison, Christian"], 'Garrison, Christian')
     all_isp['individual'] = all_isp['individual'].replace(["Lanier, Daniel"], 'Lanier, Daniel L')
+
     ## 8NL
     all_isp['individual'] = all_isp['individual'].replace(["Jardon-Rosales, Dulce"], 'Jardon-Rosales, Dulce Y')
     all_isp['individual'] = all_isp['individual'].replace(["Goldsberry, Nyea"], 'Goldsberry, Nyea Nicole')
+    all_isp['individual'] = all_isp['individual'].replace(["Weiss, Stephanie"], 'Weiss, Stephanie L')
+
     ## Castlebrook
     all_isp['individual'] = all_isp['individual'].replace(["Faust, Travis"], 'Faust, Travis A')
     all_isp['individual'] = all_isp['individual'].replace(["Headen, Deven"], 'Headen, Deven T')
 
+
+    #### Clean Program Names to match that of the timecards ####
+    site_dict = {
+        "13B Dartmouth - Castlebrook": "13B Castlebrook",
+        "8 Nairn Ln": "SA8",
+        "3 Nairn Ln": "SA3",
+        "Katrina 110": "K110",
+        "324 Broadstairs": "W103",
+        "Westover E104": "W104",
+        "Cannon Mills - 101": "J101"
+    }
+
+    for i, row in all_isp.iterrows():
+        s1 = row['site']
+        all_isp['site'][all_isp['site']==s1] = site_dict[s1]
+
     #### End
-
-
-
-
 
 
     all_isp.to_csv(fr"{save_path}\TOTAL_ISP({date}).csv")
 
     return(all_isp)
-
-
 
 
 def write_to_table(DataFrame):

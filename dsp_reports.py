@@ -1,28 +1,23 @@
 import notion_df as nd
 import pandas as pd
 import datetime
+import notion_db
 nd.pandas()
 
-notion_token = "secret_omL8nzIdOZySUeAtSOCHm0bUNh2ydXdohuePKPBXkxm"
-ee_db_id = "03764697bdf74f2b938313815cf62069"
-id_url = "https://www.notion.so/03764697bdf74f2b938313815cf62069?v=e856d446c1a44cfcb8857b014f591284"
-
+notion_token = notion_db.key
+ee_db_id = notion_db.ee
 ee_df = pd.DataFrame(nd.download(ee_db_id, api_key=notion_token))
-
 ee_df_trimmed = ee_df[["EE Code",
                'First Name',
                'Last Name',
                'Hire Date',
-               'Shift',
-               'Rotation',
-               'Position Seat',
-               'Direct Supervisor',
-               'Home Base',
                'Evaluation Due Date',
                'Termination Date',
                'Status']]
 
-def start(ee_path, save_path, savedate):
+
+
+def start(ee_path, timecard_path, save_path, savedate):
 
     # Create a dataframe from the excel file
     ee = pd.DataFrame(pd.read_csv(fr"{ee_path}"))
@@ -38,18 +33,62 @@ def start(ee_path, save_path, savedate):
 
     notion_ee = ee_df_trimmed
 
+    # Create a dataframe from the excel file
+    tc = pd.DataFrame(pd.read_csv(fr"{timecard_path}"))
 
-    return(ee, notion_ee)
+    # Seperate the time punch columns into 2 seperate entities (date, time)
+    ## InPunch
+    in_dates = pd.DataFrame(tc.InPunchTime.str.split(" ", expand=True, n=1)[0])
+    in_time = pd.DataFrame(tc.InPunchTime.str.split(" ", expand=True, n=1)[1])
+    tc['InPunchDay'] = in_dates
+    tc['InPunchTime'] = in_time
+
+    ## OutPunch
+    out_dates = pd.DataFrame(tc.OutPunchTime.str.split(" ", expand=True, n=1)[0])
+    out_time = pd.DataFrame(tc.OutPunchTime.str.split(" ", expand=True, n=1)[1])
+    tc['OutPunchDay'] = out_dates
+    tc['OutPunchTime'] = out_time
+
+    # Datatype Corrections
+    try:
+        tc['InPunchDay'] = tc['InPunchDay'].replace(['0000-00-00', None])
+        tc['InPunchDay'] = pd.to_datetime(tc['InPunchDay']).dt.date
+    except:
+        print("failed to convert InPunchDay")
+        pass
+    try:
+        tc['InPunchTime'] = pd.to_datetime(tc['InPunchTime'])
+    except:
+        print("failed to convert InPunchTime")
+        pass
+    try:
+        tc['OutPunchDay'] = tc['OutPunchDay'].replace(['0000-00-00', None])
+        tc['OutPunchDay'] = pd.to_datetime(tc['OutPunchDay']).dt.date
+    except:
+        print("failed to convert OutPunchDay")
+        pass
+    try:
+        tc['OutPunchTime'] = pd.to_datetime(tc['OutPunchTime'])
+    except:
+        print("failed to convert OutPunchTime")
+        pass
+
+    tc.to_csv(fr"{save_path}\TimeCards({savedate}).csv")
 
 
-def write_to_table(DataFrame, savepath):
+    return(ee, notion_ee, tc)
+
+
+def write_to_table(DataFrame1, DataFrame2, savepath):
+
     import azure_cnxn as az
     from sqlalchemy import create_engine
     # The next steps are used to drop the previous tables from the TOBOLA server
     #   and then create a replacement from the new data pull
 
     old = ee_df_trimmed
-    new = DataFrame
+    print(old)
+    new = DataFrame1
 
     ##  Create Table
     from sqlalchemy.engine import URL
@@ -91,7 +130,7 @@ WHERE
     print(updates)
 
     # Add new employees to notion ee database
-    updates.to_notion(id_url, title="Tests", api_key=notion_token)
+    updates.to_notion(notion_db.ee_url, title="Tests", api_key=notion_token)
 
     # List any discrepancies between employee information in new vs old
     def catch_discrepancies(older, newer):
@@ -120,10 +159,18 @@ WHERE
     # Call the function to get the discrepancies dataframe
     discrepancies = catch_discrepancies(old, new)
 
-    # Print the discrepancies dataframe
-    print(discrepancies)
-
     discrepancies.to_excel(fr"{savepath}\HR\ee_discrepancies.xlsx")
+
+    tc = DataFrame2
+
+    ##  Create Table
+    from sqlalchemy.engine import URL
+    cnxn_url = URL.create("mssql+pyodbc", query={"odbc_connect": az.cnxn_string})
+    engine = create_engine(cnxn_url)
+    tc.to_sql("TimeCards2022", engine, index=False, if_exists='replace')
+
+    return tc
+
 
 def training_report(date):
     today = datetime.datetime.now().date()
@@ -143,6 +190,7 @@ def training_report(date):
     report["Department"] = ee_df["Home Base"]
     report["Status"] = ee_df["Status"]
     report = pd.DataFrame(report.loc[report['Status'] == "Active"])
+    report = pd.DataFrame(report.loc[report['Department'] != "Administration"])
 
     report["Compliance"] = (report["LLAM Due Date"].dt.date <= today) | \
                            (report["MANDT Due Date"].dt.date <= today) | \
@@ -152,7 +200,59 @@ def training_report(date):
 
     # Save location for the report
     save = fr"C:/Users/olato/OneDrive/Desktop/TOBOLA QA REVIEW/REPORTS/training_reports"
-    dsp = pd.DataFrame(report.loc[report['Position'] == "DSP"])
-    dsp.to_excel(fr"{save}/training_report({date}).xlsx")
+    report.to_excel(fr"{save}/training_report({date}).xlsx")
 
-    return(dsp)
+    return report
+
+
+def ot_report(report):
+    report = report[(report["EarnCode"] == "R") | (report["EarnCode"] == "TRN") | (report["EarnCode"] == "HLK") | (report["EarnCode"].isnull())]
+    tc = report.drop(columns=[
+        'HomeDepartment',
+        'Pay Class',
+        'Badge',
+        'Dollars',
+        'Employee Approved',
+        'Supervisor Approved',
+        'Tax Profile',
+        'Home Department Desc',
+        'Distributed Department Code'])
+
+    # Separate the time punch columns into 2 separate entities (date, time)
+    tc['InPunchDay'], tc['InPunchTime'] = tc['InPunchTime'].str.split(" ", 1).str
+    tc['OutPunchDay'], tc['OutPunchTime'] = tc['OutPunchTime'].str.split(" ", 1).str
+
+    # Datatype Corrections
+    tc['InPunchDay'] = tc['InPunchDay'].replace(['0000-00-00', None])
+    tc['InPunchDay'] = pd.to_datetime(tc['InPunchDay']).dt.date
+
+    tc['OutPunchDay'] = tc['OutPunchDay'].replace(['0000-00-00', None])
+    tc['OutPunchDay'] = pd.to_datetime(tc['OutPunchDay']).dt.date
+
+    # Convert 'InPunchDay' to datetime type explicitly
+    tc['InPunchDay'] = pd.to_datetime(tc['InPunchDay'])
+
+    # Calculate Sunday for each date (adjusting for the week start day on Sunday)
+    tc['Sun'] = tc['InPunchDay'] - pd.to_timedelta((tc['InPunchDay'].dt.weekday + 1) % 7, unit='d')
+
+    # Calculate Saturday for each date
+    tc['Sat'] = tc['Sun'] + pd.to_timedelta(6, unit='d')
+
+    tc['Month'] = tc['InPunchDay'].dt.month
+    tc['Year'] = tc['InPunchDay'].dt.year
+
+    ot_report = tc.groupby([
+        'EECode',
+        'Firstname',
+        'Lastname',
+        'Sun',
+        'Sat',
+    ])['EarnHours'].sum().reset_index()
+
+    ot_report = ot_report[ot_report['EarnHours'] > 40]
+    ot_report['OT'] = ot_report['EarnHours'] - 40
+
+    print(ot_report)
+
+    return ot_report
+

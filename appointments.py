@@ -1,4 +1,8 @@
 import pandas as pd
+import notion_df as nd
+import notion_db
+nd.pandas()
+
 
 def start(apt_table, save_path, date):
     # Create DataFrame from Excel File
@@ -70,3 +74,13 @@ def write_to_table(DataFrame):
     cnxn_url = URL.create("mssql+pyodbc", query={"odbc_connect": az.cnxn_string})
     engine = sql.create_engine(cnxn_url)
     apt.to_sql("Appointments2022", engine, index=False, if_exists='replace')
+
+
+def routine_screenings():
+
+    # TODO Create a compliance report utilizing this dataframe
+   apts_df = nd.download(notion_db.routine_apts, api_key=notion_db.key, resolve_relation_values=True)
+   print(apts_df)
+
+
+

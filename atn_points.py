@@ -2,6 +2,7 @@ import pandas as pd
 import azure_cnxn as az
 from sqlalchemy import create_engine
 
+
 def start(points_path, save_path, date):
     #Selecting the file paths of the ISP data for each county TOBOLA server & create a data frame
     ap = pd.DataFrame(pd.read_csv(fr"{points_path}"))
@@ -49,8 +50,6 @@ def start(points_path, save_path, date):
     ap.to_csv(fr"{save_path}\ATNpoints({date}).csv")
 
     return(ap)
-
-
 
 
 def write_to_table(DataFrame):

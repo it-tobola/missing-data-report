@@ -1,14 +1,12 @@
 import notion_df as nd
 import pandas as pd
 import datetime
+import notion_db
 nd.pandas()
 
-notion_token = "secret_omL8nzIdOZySUeAtSOCHm0bUNh2ydXdohuePKPBXkxm"
-qa_db_id = "b408c4f33b91448595c640f8d0b3dd21"
-id_url = "https://www.notion.so/b408c4f33b91448595c640f8d0b3dd21?v=ca756db095b941b4981dbf0839b0de73&pvs=4"
-
+notion_token = notion_db.key
+qa_db_id = notion_db.res_qa
 qa_df = pd.DataFrame(nd.download(qa_db_id, api_key=notion_token, resolve_relation_values=True))
-
 qa_df = qa_df[["Report Type",
                "Program",
                "Title",

@@ -3,3 +3,4 @@ notion_df
 openpyxl
 pyodbc
 sqlalchemy
+streamlit

@@ -1,4 +1,6 @@
 import pyodbc
+from sqlalchemy.engine import URL
+import sqlalchemy as sql
 
 server = 'localhost'
 database = 'TOBOLA'
@@ -11,3 +13,5 @@ cnxn_string = 'DRIVER='+driver+';SERVER='+server+';DATABASE='+database+';Trusted
 # Create a cursor
 cursor = cnxn.cursor()
 
+cnxn_url = URL.create("mssql+pyodbc", query={"odbc_connect": cnxn_string})
+engine = sql.create_engine(cnxn_url)
